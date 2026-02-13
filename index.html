@@ -1,0 +1,202 @@
+const express = require("express");
+const app = express();
+const PORT = 5000;
+
+app.use(express.json());
+
+/* -------------------- DATABASE -------------------- */
+
+let courses = [
+  { id: 1, title: "Operating System", description: "Learn OS concepts and mechanisms.", instructor: "Mark Lee", progress: 70 },
+  { id: 2, title: "Artificial Intelligence", description: "Introduction to AI systems.", instructor: "Jung Jaehyun", progress: 45 },
+  { id: 3, title: "Software Engineering", description: "Design and maintain large systems.", instructor: "Kim Taeyeong", progress: 80 }
+];
+
+let users = [
+  { id: 1, name: "Maren", avatar: "https://i.pravatar.cc/40?img=1" },
+  { id: 2, name: "Jennifer", avatar: "https://i.pravatar.cc/40?img=2" },
+  { id: 3, name: "Ryan", avatar: "https://i.pravatar.cc/40?img=3" }
+];
+
+/* -------------------- API ROUTES -------------------- */
+
+app.get("/api/courses", (req, res) => {
+  res.json(courses);
+});
+
+app.put("/api/courses/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  const { progress } = req.body;
+
+  const course = courses.find(c => c.id === id);
+  if (!course) return res.status(404).json({ message: "Not found" });
+
+  course.progress = progress;
+  res.json(course);
+});
+
+app.get("/api/users", (req, res) => {
+  res.json(users);
+});
+
+/* -------------------- FRONTEND -------------------- */
+
+app.get("/", (req, res) => {
+  res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Study Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body{
+  margin:0;
+  font-family:Inter;
+  background:linear-gradient(-45deg,#6C63FF,#A084E8,#CDB4FF,#6C63FF);
+  background-size:400% 400%;
+  animation:bg 15s ease infinite;
+  display:flex;
+  color:#fff;
+}
+@keyframes bg{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+.sidebar{
+  width:220px;
+  background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(20px);
+  padding:20px;
+}
+.main{
+  flex:1;
+  padding:30px;
+}
+.rightbar{
+  width:250px;
+  background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(20px);
+  padding:20px;
+}
+.card{
+  background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(20px);
+  padding:20px;
+  margin-bottom:20px;
+  border-radius:20px;
+  transition:.3s;
+}
+.card:hover{
+  transform:translateY(-5px);
+}
+.progress{
+  height:8px;
+  background:#ffffff44;
+  border-radius:10px;
+  margin:10px 0;
+}
+.progress span{
+  display:block;
+  height:100%;
+  background:#fff;
+}
+button{
+  padding:8px 15px;
+  border:none;
+  border-radius:20px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+  <h2>eCoursie</h2>
+  <p>Dashboard</p>
+  <p>Courses</p>
+  <p>Messages</p>
+</div>
+
+<div class="main">
+  <h1>My Courses</h1>
+  <div id="courses"></div>
+</div>
+
+<div class="rightbar">
+  <h3>Online Users</h3>
+  <div id="users"></div>
+</div>
+
+<script>
+async function loadCourses(){
+  const res = await fetch("/api/courses");
+  const data = await res.json();
+  const container = document.getElementById("courses");
+  container.innerHTML = "";
+
+  data.forEach(course => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = \`
+      <h3>\${course.title}</h3>
+      <p>\${course.description}</p>
+      <small>Instructor: \${course.instructor}</small>
+      <div class="progress">
+        <span style="width:\${course.progress}%"></span>
+      </div>
+      <button onclick="increaseProgress(\${course.id}, \${course.progress})">
+        Continue (+10%)
+      </button>
+    \`;
+
+    container.appendChild(card);
+  });
+}
+
+async function increaseProgress(id, current){
+  let newProgress = current + 10;
+  if(newProgress > 100) newProgress = 100;
+
+  await fetch("/api/courses/" + id,{
+    method:"PUT",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ progress:newProgress })
+  });
+
+  loadCourses();
+}
+
+async function loadUsers(){
+  const res = await fetch("/api/users");
+  const users = await res.json();
+  const container = document.getElementById("users");
+  container.innerHTML = "";
+
+  users.forEach(user=>{
+    const img = document.createElement("img");
+    img.src = user.avatar;
+    img.style.borderRadius="50%";
+    img.style.margin="5px";
+    container.appendChild(img);
+  });
+}
+
+loadCourses();
+loadUsers();
+</script>
+
+</body>
+</html>
+  `);
+});
+
+/* -------------------- START SERVER -------------------- */
+
+app.listen(PORT, () => {
+  console.log("Server running on http://localhost:" + PORT);
+});
