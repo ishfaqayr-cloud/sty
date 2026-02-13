@@ -1,113 +1,144 @@
-const express = require("express");
-const app = express();
-const PORT = 5000;
-
-app.use(express.json());
-
-/* -------------------- DATABASE -------------------- */
-
-let courses = [
-  { id: 1, title: "Operating System", description: "Learn OS concepts and mechanisms.", instructor: "Mark Lee", progress: 70 },
-  { id: 2, title: "Artificial Intelligence", description: "Introduction to AI systems.", instructor: "Jung Jaehyun", progress: 45 },
-  { id: 3, title: "Software Engineering", description: "Design and maintain large systems.", instructor: "Kim Taeyeong", progress: 80 }
-];
-
-let users = [
-  { id: 1, name: "Maren", avatar: "https://i.pravatar.cc/40?img=1" },
-  { id: 2, name: "Jennifer", avatar: "https://i.pravatar.cc/40?img=2" },
-  { id: 3, name: "Ryan", avatar: "https://i.pravatar.cc/40?img=3" }
-];
-
-/* -------------------- API ROUTES -------------------- */
-
-app.get("/api/courses", (req, res) => {
-  res.json(courses);
-});
-
-app.put("/api/courses/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  const { progress } = req.body;
-
-  const course = courses.find(c => c.id === id);
-  if (!course) return res.status(404).json({ message: "Not found" });
-
-  course.progress = progress;
-  res.json(course);
-});
-
-app.get("/api/users", (req, res) => {
-  res.json(users);
-});
-
-/* -------------------- FRONTEND -------------------- */
-
-app.get("/", (req, res) => {
-  res.send(`
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Study Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
 <style>
-body{
+*{
   margin:0;
-  font-family:Inter;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Inter, sans-serif;
+}
+
+body{
+  display:flex;
+  min-height:100vh;
   background:linear-gradient(-45deg,#6C63FF,#A084E8,#CDB4FF,#6C63FF);
   background-size:400% 400%;
-  animation:bg 15s ease infinite;
-  display:flex;
-  color:#fff;
+  animation:gradient 15s ease infinite;
+  color:white;
 }
-@keyframes bg{
+
+@keyframes gradient{
   0%{background-position:0% 50%}
   50%{background-position:100% 50%}
   100%{background-position:0% 50%}
 }
+
 .sidebar{
-  width:220px;
-  background:rgba(255,255,255,0.15);
+  width:240px;
+  padding:25px;
   backdrop-filter:blur(20px);
-  padding:20px;
+  background:rgba(255,255,255,0.15);
 }
+
+.sidebar h2{
+  margin-bottom:30px;
+}
+
+.nav-item{
+  padding:12px;
+  border-radius:12px;
+  margin-bottom:10px;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.nav-item:hover,
+.nav-item.active{
+  background:rgba(255,255,255,0.25);
+  transform:translateX(5px);
+}
+
 .main{
   flex:1;
   padding:30px;
 }
-.rightbar{
-  width:250px;
-  background:rgba(255,255,255,0.15);
-  backdrop-filter:blur(20px);
-  padding:20px;
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:20px;
 }
+
+.search{
+  padding:10px 15px;
+  border-radius:25px;
+  border:none;
+  width:250px;
+  outline:none;
+}
+
 .card{
   background:rgba(255,255,255,0.15);
   backdrop-filter:blur(20px);
   padding:20px;
   margin-bottom:20px;
   border-radius:20px;
-  transition:.3s;
+  transition:0.3s;
 }
+
 .card:hover{
-  transform:translateY(-5px);
+  transform:translateY(-6px);
 }
+
 .progress{
   height:8px;
   background:#ffffff44;
   border-radius:10px;
   margin:10px 0;
+  overflow:hidden;
 }
+
 .progress span{
   display:block;
   height:100%;
-  background:#fff;
+  background:white;
 }
+
 button{
   padding:8px 15px;
   border:none;
   border-radius:20px;
   cursor:pointer;
+  transition:0.3s;
+}
+
+button:hover{
+  transform:scale(1.05);
+}
+
+.rightbar{
+  width:260px;
+  padding:25px;
+  backdrop-filter:blur(20px);
+  background:rgba(255,255,255,0.15);
+}
+
+.avatar{
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  margin:5px;
+  animation:pulse 2s infinite;
+}
+
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(255,255,255,0.6)}
+  70%{box-shadow:0 0 0 10px rgba(255,255,255,0)}
+  100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}
+}
+
+@media(max-width:1000px){
+  .rightbar{display:none;}
+}
+
+@media(max-width:768px){
+  .sidebar{display:none;}
 }
 </style>
 </head>
@@ -116,87 +147,117 @@ button{
 
 <div class="sidebar">
   <h2>eCoursie</h2>
-  <p>Dashboard</p>
-  <p>Courses</p>
-  <p>Messages</p>
+  <div class="nav-item active">Dashboard</div>
+  <div class="nav-item">Courses</div>
+  <div class="nav-item">Messages</div>
+  <div class="nav-item">Settings</div>
 </div>
 
 <div class="main">
-  <h1>My Courses</h1>
+  <div class="topbar">
+    <h1>My Courses</h1>
+    <input class="search" placeholder="Search..." oninput="searchCourse(this.value)">
+  </div>
+
   <div id="courses"></div>
 </div>
 
 <div class="rightbar">
-  <h3>Online Users</h3>
+  <h3>Online Study Group</h3>
   <div id="users"></div>
 </div>
 
 <script>
-async function loadCourses(){
-  const res = await fetch("/api/courses");
-  const data = await res.json();
+
+/* ---------------- DATABASE (localStorage) ---------------- */
+
+const defaultCourses = [
+  {id:1,title:"Operating System",desc:"Learn OS concepts.",instructor:"Mark Lee",progress:70},
+  {id:2,title:"Artificial Intelligence",desc:"Intro to AI systems.",instructor:"Jung Jaehyun",progress:45},
+  {id:3,title:"Software Engineering",desc:"Build scalable systems.",instructor:"Kim Taeyeong",progress:80}
+];
+
+const defaultUsers = [
+  {id:1,avatar:"https://i.pravatar.cc/40?img=1"},
+  {id:2,avatar:"https://i.pravatar.cc/40?img=2"},
+  {id:3,avatar:"https://i.pravatar.cc/40?img=3"}
+];
+
+if(!localStorage.getItem("courses")){
+  localStorage.setItem("courses",JSON.stringify(defaultCourses));
+}
+
+if(!localStorage.getItem("users")){
+  localStorage.setItem("users",JSON.stringify(defaultUsers));
+}
+
+/* ---------------- LOAD COURSES ---------------- */
+
+function loadCourses(filter=""){
+  const data = JSON.parse(localStorage.getItem("courses"));
   const container = document.getElementById("courses");
-  container.innerHTML = "";
+  container.innerHTML="";
 
-  data.forEach(course => {
+  data
+  .filter(c=>c.title.toLowerCase().includes(filter.toLowerCase()))
+  .forEach(course=>{
     const card = document.createElement("div");
-    card.className = "card";
+    card.className="card";
 
-    card.innerHTML = \`
-      <h3>\${course.title}</h3>
-      <p>\${course.description}</p>
-      <small>Instructor: \${course.instructor}</small>
+    card.innerHTML=`
+      <h3>${course.title}</h3>
+      <p>${course.desc}</p>
+      <small>Instructor: ${course.instructor}</small>
       <div class="progress">
-        <span style="width:\${course.progress}%"></span>
+        <span style="width:${course.progress}%"></span>
       </div>
-      <button onclick="increaseProgress(\${course.id}, \${course.progress})">
+      <button onclick="increaseProgress(${course.id})">
         Continue (+10%)
       </button>
-    \`;
+    `;
 
     container.appendChild(card);
   });
 }
 
-async function increaseProgress(id, current){
-  let newProgress = current + 10;
-  if(newProgress > 100) newProgress = 100;
+/* ---------------- UPDATE PROGRESS ---------------- */
 
-  await fetch("/api/courses/" + id,{
-    method:"PUT",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ progress:newProgress })
-  });
+function increaseProgress(id){
+  let data = JSON.parse(localStorage.getItem("courses"));
+  let course = data.find(c=>c.id===id);
 
+  if(course.progress < 100){
+    course.progress += 10;
+  }
+
+  localStorage.setItem("courses",JSON.stringify(data));
   loadCourses();
 }
 
-async function loadUsers(){
-  const res = await fetch("/api/users");
-  const users = await res.json();
+/* ---------------- SEARCH ---------------- */
+
+function searchCourse(value){
+  loadCourses(value);
+}
+
+/* ---------------- LOAD USERS ---------------- */
+
+function loadUsers(){
+  const users = JSON.parse(localStorage.getItem("users"));
   const container = document.getElementById("users");
-  container.innerHTML = "";
 
   users.forEach(user=>{
-    const img = document.createElement("img");
-    img.src = user.avatar;
-    img.style.borderRadius="50%";
-    img.style.margin="5px";
+    const img=document.createElement("img");
+    img.src=user.avatar;
+    img.className="avatar";
     container.appendChild(img);
   });
 }
 
 loadCourses();
 loadUsers();
+
 </script>
 
 </body>
 </html>
-  `);
-});
-
-/* -------------------- START SERVER -------------------- */
-
-app.listen(PORT, () => {
-  console.log("Server running on http://localhost:" + PORT);
-});
